@@ -29,7 +29,7 @@ const style = css`
   }
 `
 
-export const FileExportSettings = () => {
+export const FileExportSettings = ({ hideExtras = false }: { hideExtras?: boolean }) => {
   const { settings, updateSettings } = useContext<{
     settings: Settings;
     updateSettings: any;
@@ -108,40 +108,42 @@ export const FileExportSettings = () => {
       <Title size="xlarge" weight="bold">
         File Export settings
       </Title>
-      <Row>
-        <Checkbox
-          label="Compress JSON output file"
-          type="switch"
-          checked={settings.compression}
-          onChange={(value) =>
-            updateSettings((draft) => {
-              draft.compression = value
-            })
-          }
-        />
-        <Info
-          width={240}
-          label="Compression removes line breaks and whitespace from the json string"
-        />
-        {settings.tokenFormat === 'standard' && (
-          <>
-            <Checkbox
-              label="Exclude extension property"
-              type="switch"
-              checked={settings.excludeExtensionProp}
-              onChange={(value) =>
-                updateSettings((draft) => {
-                  draft.excludeExtensionProp = value
-                })
-              }
-            />
-            <Info
-              width={240}
-              label="The extension property holds additional information about the token"
-            />
-          </>
-        )}
-      </Row>
+      {!hideExtras && 
+        <Row>
+          <Checkbox
+            label="Compress JSON output file"
+            type="switch"
+            checked={settings.compression}
+            onChange={(value) =>
+              updateSettings((draft) => {
+                draft.compression = value
+              })
+            }
+          />
+          <Info
+            width={240}
+            label="Compression removes line breaks and whitespace from the json string"
+          />
+          {settings.tokenFormat === 'standard' && (
+            <>
+              <Checkbox
+                label="Exclude extension property"
+                type="switch"
+                checked={settings.excludeExtensionProp}
+                onChange={(value) =>
+                  updateSettings((draft) => {
+                    draft.excludeExtensionProp = value
+                  })
+                }
+              />
+              <Info
+                width={240}
+                label="The extension property holds additional information about the token"
+              />
+            </>
+          )}
+        </Row>
+      }
       <Title size="large" weight="bold">
         Include types in export
       </Title>
@@ -165,17 +167,19 @@ export const FileExportSettings = () => {
               )
           )}
       </div>
-      <Footer>
-        <WebLink
-          align="start"
-          href="https://github.com/lukasoppermann/design-tokens#design-tokens"
+      {!hideExtras  && (
+        <Footer>
+          <WebLink
+            align="start"
+            href="https://github.com/lukasoppermann/design-tokens#design-tokens"
         >
           Documentation
         </WebLink>
         <Button type="submit" autofocus>
           Export
         </Button>
-      </Footer>
+        </Footer>
+      )}
       <a
         ref={downloadLinkRef}
         download={`${settings.filename}${settings.extension}`}

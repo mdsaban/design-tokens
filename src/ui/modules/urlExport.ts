@@ -45,7 +45,6 @@ function requestErrorHandler() {
   parent.postMessage(
     {
       pluginMessage: {
-        command: commands.closePlugin,
         payload: {
           notification:
             '🚨 An error occurred while sending the tokens: check your settings & your server.'
@@ -61,7 +60,6 @@ function requestLoadedHandler(request: XMLHttpRequest) {
   parent.postMessage(
     {
       pluginMessage: {
-        command: commands.closePlugin,
         payload: {
           notification: responseHandler(request)
         }
@@ -90,6 +88,7 @@ const generateUrlExportRequestBody = (exportSettings: urlExportSettings, request
     body.append('ref', exportSettings.reference)
     body.append('variables[FIGMA_EVENT_TYPE]', requestBody.event_type)
     body.append('variables[FIGMA_CLIENT_PAYLOAD_TOKENS]', requestBody.client_payload.tokens)
+    body.append('variables[FIGMA_CLIENT_PAYLOAD_RAW_URLS]', requestBody.client_payload.rawUrls)
     body.append('variables[FIGMA_CLIENT_PAYLOAD_FILENAME]', requestBody.client_payload.filename)
     body.append('variables[FIGMA_CLIENT_PAYLOAD_COMMIT_MESSAGE]', requestBody.client_payload.commitMessage)
   } else {

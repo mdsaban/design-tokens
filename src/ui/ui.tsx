@@ -31,6 +31,7 @@ const PluginUi = () => {
   const [versionDifference, setVersionDifference] = useState(null)
   const [activePage, setActivePage] = useState(null)
   const [tokens, setTokens] = useState(null)
+  const [rawTokens, setRawTokens] = useState(null)
   const [figmaMetaData, setFigmaMetaData] = useState(null)
   const [settings, updateSettings] = useImmer(defaultSettings)
 
@@ -48,6 +49,7 @@ const PluginUi = () => {
       setVersionDifference(payload.versionDifference)
       setFigmaMetaData(payload.metadata)
       setTokens(payload.data)
+      setRawTokens(payload.data)
       // activate page
       setActivePage(command)
     }
@@ -70,7 +72,7 @@ const PluginUi = () => {
             <VersionNotice versionDifference={versionDifference} />
             {activePage === commands.generalSettings && <GeneralSettings />}
             {activePage === commands.export && <FileExportSettings />}
-            {activePage === commands.urlExport && <UrlExportSettings />}
+            {activePage === commands.urlExport && <UrlExportSettings rawTokens={rawTokens} />}
           </main>
         </TokenContext.Provider>
       </SettingsContext.Provider>

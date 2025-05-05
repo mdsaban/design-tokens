@@ -5,6 +5,7 @@ import { Checkbox } from '@components/Checkbox'
 import { Input } from '@components/Input'
 import { Select } from '@components/Select'
 import { Title } from '@components/Title'
+import { FileExportSettings } from '@components/FileExportSettings'
 import { FigmaContext, SettingsContext, TokenContext } from '@ui/context'
 import { CancelButton } from './CancelButton'
 import { css } from '@emotion/css'
@@ -14,13 +15,13 @@ import { Settings } from '@typings/settings'
 import { Info } from '@components/Info'
 import { Row } from '@components/Row'
 import { urlExport } from '../modules/urlExport'
+import { createGist, deleteGist } from '../modules/createGist'
 import {
   urlExportRequestBody,
   urlExportSettings
 } from '@typings/urlExportData'
 import { PluginMessage } from '@typings/pluginEvent'
 import { commands } from '@config/commands'
-import { stringifyJson } from '@utils/stringifyJson'
 import { WebLink } from './WebLink'
 import { Separator } from './Separator'
 import config from '@config/config'
@@ -36,18 +37,34 @@ const style = css`
     display: grid;
     grid-template-columns: repeat(3, 1fr);
   }
+  .loadingSpinner {
+    margin-right: 4px;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-radius: 50%;
+    border-top-color: #3498db;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `
 
-export const UrlExportSettings = () => {
+export const UrlExportSettings = ({ rawTokens }: { rawTokens?: any }) => {
   const { settings, updateSettings } = useContext<{
     settings: Settings;
     updateSettings: any;
   }>(SettingsContext)
   const { tokens, setTokens } = useContext(TokenContext)
   const { figmaUIApi } = useContext(FigmaContext)
-  const [commitMessage, setCommitMessage] = useState('')
+  const [commitMessage, setCommitMessage] = useState('Default commit message')
+  const [loading, setLoading] = useState(false)
+  const [loaderMessage, setLoaderMessage] = useState('')
 
-  const handleFormSubmit = (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault() // Prevent form submit triggering navigation
     const exportSettingsForm = event.target
     if (exportSettingsForm.checkValidity() === true) {
@@ -67,8 +84,31 @@ export const UrlExportSettings = () => {
         '*'
       )
       // prepare token json
-      const tokensToExport = prepareExport(tokens, pluginSettings)
+      const tokensToExport = prepareExport(rawTokens, pluginSettings)
       setTokens(tokensToExport)
+      // debugger
+
+      setLoading(true)
+      setLoaderMessage('Creating gist...')
+
+      // create gist
+      const { rawUrls, gistId } = await createGist(
+        parent,
+        {
+          url: settings.serverUrl,
+          accessToken: settings.accessToken,
+          acceptHeader: settings.acceptHeader,
+          contentType: settings.contentType,
+          authType: settings.authType,
+          reference: settings.reference
+        } as urlExportSettings,
+        tokensToExport,
+        commitMessage
+      )
+      
+      if(!Object.keys(rawUrls).length) return setLoading(false)
+
+      setLoaderMessage('Creating PR...')
       // download tokens
       urlExport(
         parent,
@@ -83,23 +123,23 @@ export const UrlExportSettings = () => {
         {
           event_type: settings.eventType,
           client_payload: {
-            tokens: `${stringifyJson(
-              tokensToExport,
-              settings.urlJsonCompression
-            )}`,
-            filename: `${settings.filename}${settings.extension}`,
+            rawUrls: rawUrls,
             commitMessage: `${commitMessage}`
           }
         } as urlExportRequestBody
       )
+
+      // delete gist
+      setTimeout(() => {
+        setLoading(false)
+        deleteGist(parent, gistId, settings.accessToken)
+      }, 30000)
     }
   }
 
   return (
     <form onSubmit={handleFormSubmit} className={style}>
-      <Title size="xlarge" weight="bold">
-        URL Export settings
-      </Title>
+      <FileExportSettings hideExtras={true} />
       <Row>
         <Checkbox
           label="Compress JSON output"
@@ -324,7 +364,8 @@ export const UrlExportSettings = () => {
         </WebLink>
         <CancelButton />
         <Button type="submit" autofocus>
-          Save & Export
+          {loading && <div className="loadingSpinner"></div>}
+          {loading && loaderMessage ? loaderMessage : 'Save & Export'}
         </Button>
       </Footer>
     </form>
